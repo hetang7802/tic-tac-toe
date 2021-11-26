@@ -1,0 +1,244 @@
+#!/bin/python3
+import random
+
+#initialse the play grid
+grid=[['.','.','.'],['.','.','.'],['.','.','.']]
+
+def print_grid():
+	for row in range(0,3):
+		for col in range(0,3):
+			print(grid[row][col], end=" ")
+		print("\n")
+
+#making a function to take input from the user to choose the column
+def promptUser():
+	valid=[1,2,3]
+	row=input("which row do you choose? (from 1,2,3): ")
+	while(valid.count(int(row))==0):
+		row=input("please enter valid input: ")
+	print("you chose the row ",row,"!")
+	col=input("which column do you choose? (from 1,2,3): ")
+	while(valid.count(int(col))==0):
+		col=input("please enter valid input: ")
+	print("you chose the column ",col,"!")
+	verify(int(row)-1,int(col)-1)
+
+# function to verify user's choice is vacant or not
+def verify(row,col):
+	if(grid[row][col]!='.'):
+		print("the box chosen by you is not empty, please try again :( ")
+		promptUser()
+	else:
+		fill_grid(int(row),int(col),'X')
+		print("the grid after your choice is")
+		print_grid()
+
+# function to check vacant places
+def check_vacant():
+	#print("wait for the opponent to take turn")
+	valid=[]
+	for i in range(0,3):
+		for j in range(0,3):
+			if(grid[i][j]=='.'):
+				valid.append([i,j])
+	return valid
+
+# generating index for computer
+def generate_index():
+	valid=check_vacant()
+	if(len(valid)==0):
+		print("no empty box left.. the game is over")
+	box=random.choice(valid)
+	print("the opponent chose the row {} and col {}, so now the grid looks like".format(box[0],box[1]))
+	fill_grid(box[0],box[1],'O')
+	print_grid()
+
+def fill_grid(row,col,char):
+	grid[row][col]=char
+
+# this checks all types of win possible
+def check_win(curr_grid):
+	#return -1 if player1 wins and 1 if computer wins
+	if(check_horizontal_win(curr_grid)==1 or check_vertical_win(curr_grid)==1 or check_diagonal_win(curr_grid)==1):
+		return 1
+	elif(check_horizontal_win(curr_grid)==-1 or check_vertical_win(curr_grid)==-1 or check_diagonal_win(curr_grid)==-1):
+		return -1
+
+def check_horizontal_win(curr_grid):
+	for i in range(0,3):
+		if(curr_grid[i][0]==curr_grid[i][1] and curr_grid[i][1]==curr_grid[i][2] and curr_grid[i][0]!='.'):
+			# return -1 for player win and 1 for computer win
+			if(curr_grid[i][0]=='O'):
+				return 1
+			else:
+				return -1
+	return 0
+
+def check_vertical_win(curr_grid):
+	for i in range(0,3):
+		if(curr_grid[0][i]==curr_grid[1][i] and curr_grid[1][i]==curr_grid[2][i] and curr_grid[0][i]!='.'):
+			# return -1 for player win and 1 for computer win
+			if(curr_grid[0][i]=='O'):
+				return 1
+			else:
+				return -1
+	return 0
+
+def check_diagonal_win(curr_grid):
+	if(curr_grid[0][0]==curr_grid[1][1] and curr_grid[1][1]==curr_grid[2][2] and curr_grid[0][0]!='.'):
+		# return -1 for player win and 1 for computer win
+		if(curr_grid[0][0]=='O'):
+			return 1
+		else:
+			return -1
+	elif(curr_grid[0][2]==curr_grid[1][1] and curr_grid[1][1]==curr_grid[2][0] and curr_grid[0][2]!='.'):
+		if(curr_grid[0][2]=='O'):
+			return 1
+		else:
+			return -1
+	else:
+		return 0
+
+
+def minimax(curr_board,depth,isMaximising):
+
+	win=check_win(curr_board)
+
+	#check if player or computer has already won
+	if(win==1 or win==-1):
+		return win
+
+	#if the grid is full return 0
+	if(len(check_vacant())==0):
+		return 0
+
+	if(isMaximising):
+		best_score=-1000000
+
+		for i in range(3):
+			for j in range(3):
+				if (curr_board[i][j]=='.'):
+					#make temporary move
+					curr_board[i][j]='O'
+
+					#find score on temp move
+					score=minimax(curr_board,depth+1,False)
+
+					best_score=max(score,best_score)
+
+					#removing the move
+					curr_board[i][j]='.'
+		return best_score
+	else:
+		best_score=1000000
+
+		for i in range(3):
+			for j in range(3):
+				if(curr_board[i][j]=='.'):
+
+					#make temp move
+					curr_board[i][j]='X'
+
+					#find score
+					score=minimax(curr_board,depth+1,True)
+
+					best_score=min(score,best_score)
+
+					#remove the temp move
+					curr_board[i][j]='.'
+		return best_score
+
+def computer_take_turn(curr_board):
+	bestIndex=[-1,-1]
+	bestVal=-10000000
+	for i in range(3):
+		for j in range(3):
+			if(curr_board[i][j]=='.'):
+
+				curr_board[i][j]='O'
+				tempVal=minimax(curr_board,0,False)
+				curr_board[i][j]='.'
+				if(tempVal > bestVal):
+					bestIndex[0]=i
+					bestIndex[1]=j
+					bestVal=tempVal
+	print("the computer chose {}, {} as the best move!".format(bestIndex[0]+1,bestIndex[1]+1))
+
+	fill_grid(bestIndex[0],bestIndex[1],'O')
+	print_grid()
+
+# ask user if he wants first move
+def promt_for_firstmove():
+	fm=input("do you want to take the first move? Y:yes N:no ")
+	#check for correct input
+	while(fm!='Y' and fm!='N'):
+		fm=input("incorrect input!, please enter valid input Y:yes N:no ")
+	return fm
+
+# ask user for difficulty level he wants
+def promt_for_difficulty():
+	diff=input("enter the difficulty level you want 0:easy 1:hard ")
+	#check for correct input
+	while(int(diff)!=0 and int(diff)!=1):
+		diff=input("invalid input! please enter valid input 0:easy 1:hard")
+	return diff
+
+# the main game
+
+#input the difficulty level
+difficulty=promt_for_difficulty()
+#input who takes first move
+firstmove=promt_for_firstmove()
+
+while(1):
+	# if computer's turn first
+	if(firstmove=='N'):
+		# check if no more moves can be taken
+		if(len(check_vacant())==0):
+			print("the match is drawn")
+			break
+		# computer's first
+		if(int(difficulty)==0):
+			generate_index()
+		else:
+			computer_take_turn(grid)
+		#check for computer's win
+		if(check_win(grid)==1):
+			print("the computer has won, try again :(")
+			break
+		#check if grid is full
+		if(len(check_vacant())==0):
+			print("the match is drawn")
+			break
+		#now player's turn
+		promptUser()
+		#check for player's win
+		if(check_win(grid)==-1):
+			print("you have won!! ")
+			break
+	else:
+		#block if player takes first turn
+		# check if no more moves can be taken
+		if(len(check_vacant())==0):
+			print("the match is drawn")
+			break
+		#now player's turn
+		promptUser()
+		#check for player's win
+		if(check_win(grid)==-1):
+			print("you have won!! ")
+			break
+		#check if grid is full
+		if(len(check_vacant())==0):
+			print("the match is drawn")
+			break
+		# computer's turn
+		if(int(difficulty)==0):
+			generate_index()
+		else:
+			computer_take_turn(grid)
+		#check for computer's win
+		if(check_win(grid)==1):
+			print("the computer has won, try again :(")
+			break
+
